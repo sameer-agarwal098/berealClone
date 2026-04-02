@@ -1,4 +1,5 @@
 import { Text, View, StyleSheet } from "react-native";
+import { Button, Host } from "@expo/ui/jetpack-compose";
 import { Link, useRouter } from "expo-router";
 
 export default function Index() {
@@ -7,6 +8,11 @@ export default function Index() {
     <View style={styles.container}>
       <Text style={styles.helloWorldTitle}>Hello World</Text>
       <Link href={"/about"}>Go to the About Screen</Link>
+      <Host>
+        <Button onClick={() => router.push("/about")}>
+          <Text>Navigate</Text>
+        </Button>
+      </Host>
     </View>
   );
 }
