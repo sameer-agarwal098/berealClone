@@ -1,4 +1,10 @@
 import { Text, View, StyleSheet } from "react-native";
+import {
+  Button,
+  Host,
+  Column,
+  ModalBottomSheet,
+} from "@expo/ui/jetpack-compose";
 
 export default function Profile() {
   return (
