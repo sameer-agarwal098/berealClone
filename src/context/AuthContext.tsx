@@ -1,5 +1,11 @@
 import { supabase } from "@/lib/supabase/client";
-import { createContext, ReactNode, useContext, useState } from "react";
+import {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
 export interface User {
   id: string;
@@ -21,6 +27,27 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    checkSession();
+  }, []);
+
+  const checkSession = async () => {
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session?.user) {
+        const profile = await fetchUserProfile(session.user.id);
+        setUser(profile);
+      } else {
+        setUser(null);
+      }
+    } catch (error) {
+      console.error("Error checking session:", error);
+      setUser(null);
+    }
+  };
 
   const fetchUserProfile = async (userId: string): Promise<User | null> => {
     try {
@@ -112,7 +139,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, signUp, updateUser,signIn }}>
+    <AuthContext.Provider value={{ user, signUp, updateUser, signIn }}>
       {children}
     </AuthContext.Provider>
   );
