@@ -1,0 +1,143 @@
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/lib/supabase/client";
+import { uploadPostImage } from "@/lib/supabase/storage";
+import { useEffect, useState } from "react";
+
+export interface PostUser {
+  id: string;
+  name: string;
+  username: string;
+  profile_image_url?: string;
+}
+
+export interface Post {
+  id: string;
+  user_id: string;
+  image_url: string;
+  description?: string;
+  created_at: string;
+  expires_at: string;
+  is_active: boolean;
+  profiles?: PostUser | null;
+}
+
+export const usePosts = () => {
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
+
+  // useEffect(() => {
+  //   if (user) {
+  //     loadPosts();
+  //   } else {
+  //     setIsLoading(false);
+  //   }
+  // }, [user]);
+
+  // const loadPosts = async () => {
+  //   if (!user) return;
+
+  //   setIsLoading(true);
+  //   try {
+  //     const { data, error } = await supabase
+  //       .from("posts")
+  //       .select(`*, profiles(id,name,username,profile_image_url)`)
+  //       .eq("is_active", true)
+  //       .gt("expires_at", new Date().toISOString())
+  //       .order("created_at", { ascending: false });
+
+  //     if (error) throw error;
+
+  //     setPosts(data || []);
+  //     console.log(data);
+  //   } catch (error) {
+  //     console.error("Error in loadPosts:", error);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+
+  useEffect(() => {
+    loadPosts();
+  }, []);
+
+  const loadPosts = async () => {
+
+    if (!user) return;
+
+    setIsLoading(true);
+    try {
+      const { data: postData, error: postError } = await supabase
+        .from("posts")
+        .select(`*,profiles(id,name,username,profile_image_url)`)
+        .eq("is_active", true)
+        .gt("expires_at", new Date().toISOString())
+        .order("created_at", { ascending: false });
+
+      if (postError) {
+        console.error("Error while loading posts:", postError);
+        throw postError;
+      }
+
+      if (!postData || postData.length === 0) {
+        setPosts([]);
+        return;
+      }
+
+      console.log(postData);
+
+      const postsWithProfiles = postData.map((post) => ({
+        ...post,
+        profiles: post.profiles || null,
+      }));
+
+      setPosts(postsWithProfiles);
+    } catch (error) {
+      console.error("Error in loadPosts:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const createPost = async (imageUri: string, description?: string) => {
+    if (!user) {
+      throw new Error("User not authenticated");
+    }
+    try {
+      const imageUrl = await uploadPostImage(user.id, imageUri);
+
+      //Calculate expiration time
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+      const { error } = await supabase
+        .from("posts")
+        .insert({
+          user_id: user.id,
+          image_url: imageUrl,
+          description: description?.trim() || null,
+          expires_at: expiresAt.toISOString(),
+          is_active: true,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error while creating post:", error);
+        throw error;
+      }
+      //Refresh Posts
+      await loadPosts();
+    } catch (error) {
+      console.error("Error in createPost:", error);
+      throw error;
+    }
+  };
+
+  const refreshPosts = async () => {
+    await loadPosts();
+  };
+
+  return { createPost, posts, refreshPosts, isLoading };
+};

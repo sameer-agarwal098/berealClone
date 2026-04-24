@@ -70,8 +70,8 @@ export default function OnBoardingScreen() {
   const showImagePicker = () => {
     Alert.alert("Select Profile Image", "Choose an option", [
       { text: "Photo Library", onPress: pickImage },
-      { text: "Cancel", style: "cancel" },
       { text: "Camera", onPress: takePhoto },
+      { text: "Cancel", style: "cancel" },
     ]);
   };
 

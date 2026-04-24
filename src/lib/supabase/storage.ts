@@ -3,15 +3,15 @@ import { supabase } from "./client";
 
 export const uploadProfileImage = async (userId: string, imageUri: string) => {
   try {
-    const fileExtension = imageUri.split(".").pop() || "jpg";
-    const fileName = `${userId}/profile.${fileExtension};`;
+    const fileExtension = imageUri.split(".").pop()?.toLowerCase() || "jpg";
+    const fileName = `${userId}/profile.${fileExtension}`;
     const file = new File(imageUri);
     const bytes = await file.bytes();
 
     const { error } = await supabase.storage
       .from("profiles")
       .upload(fileName, bytes, {
-        contentType: `images/${fileExtension}`,
+        contentType: `image/${fileExtension}`,
         upsert: true,
       });
 
@@ -26,6 +26,36 @@ export const uploadProfileImage = async (userId: string, imageUri: string) => {
     return urlData.publicUrl;
   } catch (error) {
     console.error("Error uploading profile image:", error);
+    throw error;
+  }
+};
+
+export const uploadPostImage = async (userId: string, imageUri: string) => {
+  try {
+    const fileExtension = imageUri.split(".").pop()?.toLowerCase() || "jpg";
+    const fileName = `${userId}/post_${Date.now()}.${fileExtension}`;
+    // const fileName = `${userId}/post.${fileExtension}`;
+    const file = new File(imageUri);
+    const bytes = await file.bytes();
+
+    const { error } = await supabase.storage
+      .from("posts")
+      .upload(fileName, bytes, {
+        contentType: `image/${fileExtension}`,
+        upsert: true,
+      });
+
+    if (error) {
+      throw error;
+    }
+
+    const { data: urlData } = supabase.storage
+      .from("posts")
+      .getPublicUrl(fileName);
+
+    return urlData.publicUrl;
+  } catch (error) {
+    console.error("Error uploading posts image:", error);
     throw error;
   }
 };
