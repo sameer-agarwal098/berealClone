@@ -27,50 +27,25 @@ export const usePosts = () => {
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
-  // useEffect(() => {
-  //   if (user) {
-  //     loadPosts();
-  //   } else {
-  //     setIsLoading(false);
-  //   }
-  // }, [user]);
-
-  // const loadPosts = async () => {
-  //   if (!user) return;
-
-  //   setIsLoading(true);
-  //   try {
-  //     const { data, error } = await supabase
-  //       .from("posts")
-  //       .select(`*, profiles(id,name,username,profile_image_url)`)
-  //       .eq("is_active", true)
-  //       .gt("expires_at", new Date().toISOString())
-  //       .order("created_at", { ascending: false });
-
-  //     if (error) throw error;
-
-  //     setPosts(data || []);
-  //     console.log(data);
-  //   } catch (error) {
-  //     console.error("Error in loadPosts:", error);
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
-
   useEffect(() => {
-    loadPosts();
-  }, []);
+    if (user) {
+      loadPosts();
+    } else {
+      setIsLoading(false);
+    }
+  }, [user]);
 
   const loadPosts = async () => {
-
     if (!user) return;
 
     setIsLoading(true);
     try {
       const { data: postData, error: postError } = await supabase
         .from("posts")
-        .select(`*,profiles(id,name,username,profile_image_url)`)
+        .select(
+          `*,
+          profiles(id,name,username,profile_image_url)`,
+        )
         .eq("is_active", true)
         .gt("expires_at", new Date().toISOString())
         .order("created_at", { ascending: false });
@@ -134,6 +109,10 @@ export const usePosts = () => {
       throw error;
     }
   };
+
+  
+
+  
 
   const refreshPosts = async () => {
     await loadPosts();

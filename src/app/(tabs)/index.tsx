@@ -6,6 +6,7 @@ import {
   Alert,
   Modal,
   TextInput,
+  FlatList,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 
@@ -13,7 +14,7 @@ import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { Image } from "expo-image";
-import { usePosts } from "@/hooks/usePosts";
+import { Post, usePosts } from "@/hooks/usePosts";
 
 export default function Index() {
   const [showPreview, setShowPreview] = useState(false);
@@ -23,7 +24,7 @@ export default function Index() {
 
   const router = useRouter();
 
-  const { createPost } = usePosts();
+  const { createPost,posts } = usePosts();
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -95,8 +96,14 @@ export default function Index() {
     }
   };
 
+  const renderPost=({item}:{item:Post})=>{
+
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={["bottom", "top"]}>
+
+    {/*LIST*/}
 
     
 
