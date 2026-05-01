@@ -23,7 +23,7 @@ export const uploadProfileImage = async (userId: string, imageUri: string) => {
       .from("profiles")
       .getPublicUrl(fileName);
 
-    return urlData.publicUrl;
+    return `${urlData.publicUrl}?t=${Date.now()}`;
   } catch (error) {
     console.error("Error uploading profile image:", error);
     throw error;
@@ -34,7 +34,6 @@ export const uploadPostImage = async (userId: string, imageUri: string) => {
   try {
     const fileExtension = imageUri.split(".").pop()?.toLowerCase() || "jpg";
     const fileName = `${userId}/post_${Date.now()}.${fileExtension}`;
-    // const fileName = `${userId}/post.${fileExtension}`;
     const file = new File(imageUri);
     const bytes = await file.bytes();
 
@@ -42,7 +41,7 @@ export const uploadPostImage = async (userId: string, imageUri: string) => {
       .from("posts")
       .upload(fileName, bytes, {
         contentType: `image/${fileExtension}`,
-        upsert: true,
+        upsert: false,
       });
 
     if (error) {

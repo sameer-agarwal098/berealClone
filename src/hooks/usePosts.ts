@@ -18,22 +18,25 @@ export interface Post {
   created_at: string;
   expires_at: string;
   is_active: boolean;
-  profiles?: PostUser | null;
+  profiles?: PostUser;
 }
 
 export const usePosts = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
+  // useEffect(() => {
+  //   if (user) {
+  //     loadPosts();
+  //   } else {
+  //     setIsLoading(false);
+  //   }
+  // }, [user]);
+
   useEffect(() => {
-    if (user) {
-      loadPosts();
-    } else {
-      setIsLoading(false);
-    }
-  }, [user]);
+    loadPosts();
+  }, []);
 
   const loadPosts = async () => {
     if (!user) return;
@@ -43,7 +46,8 @@ export const usePosts = () => {
       const { data: postData, error: postError } = await supabase
         .from("posts")
         .select(
-          `*,
+          `
+          *,
           profiles(id,name,username,profile_image_url)`,
         )
         .eq("is_active", true)
@@ -59,8 +63,6 @@ export const usePosts = () => {
         setPosts([]);
         return;
       }
-
-      console.log(postData);
 
       const postsWithProfiles = postData.map((post) => ({
         ...post,
@@ -80,6 +82,17 @@ export const usePosts = () => {
       throw new Error("User not authenticated");
     }
     try {
+      // Deactivate any existing posts
+      const { error: deactivateError } = await supabase
+        .from("posts")
+        .update({ is_active: false })
+        .eq("user_id", user.id)
+        .eq("is_active", true);
+
+      if (deactivateError) {
+        console.error("Error deactivating old posts:", deactivateError);
+      }
+
       const imageUrl = await uploadPostImage(user.id, imageUri);
 
       //Calculate expiration time
@@ -102,6 +115,7 @@ export const usePosts = () => {
         console.error("Error while creating post:", error);
         throw error;
       }
+
       //Refresh Posts
       await loadPosts();
     } catch (error) {
@@ -109,10 +123,6 @@ export const usePosts = () => {
       throw error;
     }
   };
-
-  
-
-  
 
   const refreshPosts = async () => {
     await loadPosts();
