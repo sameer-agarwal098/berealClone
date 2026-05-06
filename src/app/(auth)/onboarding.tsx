@@ -158,6 +158,7 @@ export default function OnBoardingScreen() {
           >
             {profileImage ? (
               <Image
+              cachePolicy={"none"}
                 source={{ uri: profileImage }}
                 style={styles.profileImage}
               />

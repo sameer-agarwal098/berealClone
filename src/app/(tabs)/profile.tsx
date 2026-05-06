@@ -5,17 +5,82 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
+import { uploadProfileImage } from "@/lib/supabase/storage";
+import { useState } from "react";
+import { useRouter } from "expo-router";
 
 export default function Profile() {
-  const { user } = useAuth();
+  const { user, updateUser, signOut } = useAuth();
+  const [isUpdating, setIsUpdating] = useState(false);
+  const router = useRouter();
+
+  const handleUpdateProfileImage = async () => {
+    if (!user) return;
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permission needed",
+        "We need camera roll permission to select a profile image.",
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setIsUpdating(true);
+      try {
+        const imageUrl = await uploadProfileImage(
+          user.id,
+          result.assets[0].uri,
+        );
+        await updateUser({ profileImage: imageUrl });
+        Alert.alert("Success", "Profile Image updated.");
+      } catch (error) {
+        console.error("Error while updating profile image:", error);
+        Alert.alert(
+          "Error",
+          "Failed to update profile image. Please try again.",
+        );
+      } finally {
+        setIsUpdating(false);
+      }
+    }
+  };
+
+  const handleSignOut = async () => {
+    Alert.alert("Sign Out", "Are you sure you want to sign out ? ", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Sign Out",
+        style: "destructive",
+        onPress: async () => {
+          await signOut();
+          router.replace("/(auth)/login");
+        },
+      },
+    ]);
+  };
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.profileSection}>
-          <TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleUpdateProfileImage}
+            disabled={isUpdating}
+          >
             <View>
               {user?.profileImage ? (
                 <Image
@@ -101,7 +166,10 @@ export default function Profile() {
         </View>
 
         <View style={styles.section}>
-          <TouchableOpacity style={[styles.settingItem, styles.signOutButton]}>
+          <TouchableOpacity
+            style={[styles.settingItem, styles.signOutButton]}
+            onPress={handleSignOut}
+          >
             <Text style={styles.signOutText}>Sign Out</Text>
           </TouchableOpacity>
 
